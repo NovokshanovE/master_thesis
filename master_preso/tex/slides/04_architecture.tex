@@ -1,0 +1,29 @@
+\begin{frame}[fragile,shrink=5]\frametitle{Архитектура разработанного сервиса}
+\centering
+\begin{tikzpicture}[
+  box/.style={draw=black,rounded corners=3pt,align=center,font=\small,
+              text width=2.5cm,minimum height=1.3cm}
+]
+\node[box] (cl) {Потребители {\scriptsize «Mitigator», «Collector»}};
+\node[box, right=1.6cm of cl] (svc) {\textbf{Сервис} {\scriptsize сопоставления}};
+\node[box, right=1.6cm of svc] (bgp) {\textbf{GoBGP} {\scriptsize маршрутная база}};
+
+\draw[msarr] (cl.east)  -- node[above,font=\tiny]{gRPC} (svc.west);
+\draw[msarr] (svc.east) -- node[above,font=\tiny]{gRPC} (bgp.west);
+\end{tikzpicture}
+
+\vspace{0.3em}
+\raggedright\footnotesize
+\textbf{Потребители → Сервис (gRPC):}
+\begin{itemize}\setlength{\itemsep}{0.05em}
+  \item \texttt{GetASNInfo} (lookup по IP)
+  \item \texttt{GetPrefixesASTable} (полный снимок)
+  \item \texttt{SubscribePrefixASUpdates} (поток изменений)
+\end{itemize}
+\textbf{Сервис → GoBGP (gRPC):}
+\begin{itemize}\setlength{\itemsep}{0.05em}
+  \item \texttt{ListPath} --- чтение полного снимка
+  \item \texttt{WatchEvent} --- приём потока изменений (режим ART)
+\end{itemize}
+\textbf{Построение снимка:} параллельная выгрузка IPv4 и IPv6; алгоритм устранения перекрывающихся IP-префиксов
+\end{frame}

@@ -1,0 +1,39 @@
+\begin{frame}[fragile,shrink=12]\frametitle{Шардированное хранилище: устройство}
+\centering
+\begin{tikzpicture}[
+  box/.style={draw=black,rounded corners=3pt,align=center,font=\footnotesize,
+              text width=1.6cm,minimum height=0.8cm,fill=gray!12},
+  garr/.style={-{Latex[length=1.8mm]},thick},
+  slbl/.style={font=\tiny,text=gray!80,align=center}
+]
+\node[box, text width=2.4cm] (fv)  at ( 0.0,  0.00) {Полный снимок};
+\node[box, text width=3.2cm] (h)   at ( 0.0, -1.15) {FNV-хеш и маршрутизация};
+
+\node[slbl]                        at (-3.0, -2.05) {Шард 0};
+\node[box]  (lo0)                  at (-3.0, -2.65) {Загрузчик 0 {\tiny (горутина)}};
+\node[box]  (ar0)                  at (-3.0, -3.75) {ART 0};
+
+\node[slbl]                        at (-1.0, -2.05) {Шард 1};
+\node[box]  (lo1)                  at (-1.0, -2.65) {Загрузчик 1 {\tiny (горутина)}};
+\node[box]  (ar1)                  at (-1.0, -3.75) {ART 1};
+
+\node[font=\large]                 at ( 0.85, -2.65) {$\cdots$};
+\node[font=\large]                 at ( 0.85, -3.75) {$\cdots$};
+
+\node[slbl]                        at ( 3.0, -2.05) {Шард K};
+\node[box]  (lok)                  at ( 3.0, -2.65) {Загрузчик K {\tiny (горутина)}};
+\node[box]  (ark)                  at ( 3.0, -3.75) {ART K};
+
+\draw[garr] (fv)      -- (h);
+\draw[garr] (h.south) -- (lo0.north);
+\draw[garr] (h.south) -- (lo1.north);
+\draw[garr] (h.south) -- (lok.north);
+\draw[garr] (lo0) -- (ar0);
+\draw[garr] (lo1) -- (ar1);
+\draw[garr] (lok) -- (ark);
+\end{tikzpicture}
+
+\vspace{0.3em}
+\raggedright\small
+При полном снимке каждый шард загружается параллельной горутиной независимо; при потоке обновлений изменение направляется ровно в один шард, не блокируя остальные.
+\end{frame}

@@ -1,0 +1,25 @@
+\begin{frame}\frametitle{Варианты хранилища и режимы обновления}
+\setlength{\tabcolsep}{6pt}\footnotesize
+\begin{tabular}{p{0.30\linewidth}|p{0.30\linewidth}|p{0.30\linewidth}}
+\hline
+\rowcolor{gray!20}
+\textbf{Критерий} & \textbf{ranger (старое)} & \textbf{шард. ART (новое)} \\
+\hline\hline
+Режим обновления
+  & Polling по таймеру; полная замена таблицы
+  & Полный снимок, затем поток обновлений \\\hline
+Полная выгрузка
+  & \textbf{Быстро} --- копирование слайса
+  & \textbf{Медленнее} --- обход шардов, аллокации \\\hline
+Одиночная запись
+  & \textbf{Перестройка всей таблицы}, $O(n)$
+  & \textbf{Локально в шарде}, без перестройки \\\hline
+Поток обновлений
+  & \textbf{Не поддерживается}
+  & \textbf{Поддерживается} \\\hline
+\end{tabular}
+
+\vspace{0.5em}
+\centering\footnotesize
+Оба варианта доступны в сервисе; выбор задаётся конфигурационным параметром.
+\end{frame}

@@ -54,7 +54,7 @@
 \node[block, fill=gray!10, text width=5.3cm, below=of svc, xshift=-3cm] (bgp)
    {Клиент GoBGP\\ \texttt{ListPath}, \texttt{WatchEvent}};
 \node[block, fill=gray!10, text width=5.3cm, right=of bgp] (store)
-   {Хранилище \texttt{prefixStore}\\ (ranger / шард. ART)};
+   {Хранилище \texttt{prefixStore}\\ (\texttt{ranger} / шард. ART)};
 \node[block, fill=gray!10, text width=11cm, below=0.6cm of bgp.south, anchor=north, xshift=3cm] (api)
    {gRPC-сервер пользовательского API + рассылка подписчикам};
 
@@ -121,7 +121,7 @@
 (см. рис.~\ref{fig:store-contract}):
 
 \begin{itemize}
-\item \textbf{ranger} -- прежнее решение, оптимизированное под полную
+\item \textbf{\texttt{ranger}} -- прежнее решение, оптимизированное под полную
 замену таблицы;
 \item \textbf{шардированный ART} -- новое решение, поддерживающее
 инкрементальные модификации.
@@ -140,7 +140,7 @@
     \texttt{Replace} $|$ \texttt{Upsert} $|$ \texttt{Delete} $|$
     \texttt{Lookup} $|$ \texttt{Dump}};
 \node[block, text width=4.6cm, below left=1cm and 0.4cm of iface.south, fill=gray!4] (rg)
-   {\textbf{Реализация \textit{ranger}}\\
+   {\textbf{Реализация \texttt{ranger}}\\
     плоский слайс\\ полная замена при \texttt{Upsert}};
 \node[block, text width=4.6cm, below right=1cm and 0.4cm of iface.south, fill=gray!4] (art)
    {\textbf{Реализация \textit{шард. ART}}\\
