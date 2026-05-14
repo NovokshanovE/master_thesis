@@ -1,0 +1,288 @@
+\title{Поддержание базы автономных систем на основе BGP-данных}
+\subtitle{}
+\author{Студент: Новокшанов Е.\,А. \\ Руководитель: Белявцев И.П.}
+\institute{}
+\date{\today}
+
+\begin{document}
+
+% -------------------- Title --------------------
+\maketitle
+
+% -------------------- Agenda --------------------
+\begin{frame}{План}
+\tableofcontents
+\end{frame}
+
+% ==================== Section: Context ====================
+\section{Контекст и актуальность}
+
+\begin{frame}{Обзор предметной области}
+\begin{itemize}
+  \item \textbf{AS (Autonomous System)} — административная единица маршрутизации Интернета
+  \item \textbf{BGP (Border Gateway Protocol)} — протокол обмена маршрутной информацией между AS
+  \item Целевое представление данных: \texttt{prefix → ASN}
+\end{itemize}
+
+\vspace{0.7em}
+\alert{\faNetworkWired\quad AS path (путь автономных систем) позволяет построить граф связности Интернета. Анализируя этот граф, можно определить, какой автономной системе (организации) принадлежит конкретный IP-адрес или префикс.}
+\end{frame}
+
+\begin{frame}{Где это используется}
+\begin{columns}[T,onlytextwidth]
+\column{0.62\textwidth}
+\begin{itemize}
+  \item DDoS mitigation (фильтрация / политика обработки трафика)
+  \item Анализ и классификация сетевого трафика
+  \item Продукты: \textbf{BIFIT Mitigator} и \textbf{BIFIT Collector}
+\end{itemize}
+
+\column{0.38\textwidth}
+\vspace{0.4em}
+\begin{block}{Ключевая потребность}
+\small
+Быстро и точно отвечать на вопрос: \emph{«К какой AS относится IP/префикс?»}
+\end{block}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Актуальность}
+\begin{itemize}
+  \item Распространённый подход: GeoIP/ASN базы (обновление раз в часы/дни)
+  \item BGP-роутинг изменяется динамически (слияния сетей, анонсы новых префиксов, сбои)
+  \item Устаревшие данные → неверные решения в защите/аналитике
+\end{itemize}
+
+\vspace{0.7em}
+\alert{\faClock\quad Требуется актуализация AS-базы в режиме реального времени.}
+\end{frame}
+
+% ==================== Section: Problem ====================
+\section{Проблематика}
+
+\begin{frame}{Проблематика существующих решений}
+\begin{columns}[T,onlytextwidth]
+\column{0.38\textwidth}
+\begin{itemize}
+  \item Монолитная архитектура
+  \item Периодическая обработка FullView
+  \item Глобальные блокировки
+  \item Высокая CPU/RAM нагрузка
+\end{itemize}
+
+\column{0.62\textwidth}
+\centering
+\includegraphics[width=\linewidth]{old_arch.png}
+\captionof*{figure}{Архитектура с последовательной обработкой полных дампов (FullView) и глобальными блокировками.}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Проблема: блокировки и конкуренция}
+\centering
+\includegraphics[width=0.95\linewidth]{locks_sharding.png}
+\captionof*{figure}{Сравнение подходов к синхронизации: шардирование данных (конкуренция низкая) vs. общая блокировка (RWMutex, конкуренция высокая).}
+\end{frame}
+
+\begin{frame}{Структура данных: Adaptive Radix Tree (ART)}
+\begin{columns}[T,onlytextwidth]
+\column{0.60\textwidth}
+\begin{itemize}
+  \item Adaptive Radix Tree (ART) — разновидность префиксного дерева (trie) с узлами переменного размера.
+  \item Узлы меняют формат (4/16/48/256 детей) \textbf{в зависимости от ветвления}
+  \item Быстрый поиск по байтам ключа (IPv4/IPv6 префиксы)
+  \item Хороша для:
+  \begin{itemize}
+    \item потоковой выгрузки
+    \item компактного хранения ключей
+  \end{itemize}
+\end{itemize}
+
+\vspace{0.4em}
+\alert{\faLightbulb\quad В каждом шарде: \texttt{map} для O(1) Get/Upsert и \texttt{ART} для быстрого обхода.}
+
+\column{0.3\textwidth}
+\begin{block}{Почему не только map?}
+\small
+\begin{itemize}
+  \item Хэш-таблица (map) не поддерживает упорядоченный обход, необходимый для эффективного полного дампа (DumpAll).
+  \item Полный дамп требует эффективной итерации без глобальной блокировки
+\end{itemize}
+\end{block}
+\end{columns}
+\end{frame}
+
+\begin{frame}{ART: Структура внутренних узлов}
+\begin{itemize}
+  \item Ключ хранится как последовательность байтов (например, \texttt{IPv6} — 16 байт)
+  \item Узлы: \textbf{Node4 → Node16 → Node48 → Node256} (по мере роста числа детей)
+  \item Такой подход снижает накладные расходы на хранение узлов и ускоряет поиск в дереве за счёт адаптации к плотности ключей
+\end{itemize}
+
+\vspace{0.6em}
+\centering
+\includegraphics[
+  width=0.95\linewidth,
+  height=0.65\textheight,
+  keepaspectratio
+]{art_schematic.png}
+\end{frame}
+
+% % ==================== Section: Experiments ====================
+% \section{Эксперименты: почему именно ART}
+
+% \begin{frame}{ART vs Radix tree}
+% \begin{itemize}
+%   \item Цель: сравнить производительность \textbf{ART} и \textbf{Radix tree} на IP-префиксах с хранением значения ASN
+%   \item Реализованные сценарии:
+%   \begin{itemize}
+%     \item \texttt{full-load} — полная загрузка данных
+%     \item \texttt{stream-load} — потоковая загрузка с периодическими выборками
+%     \item \texttt{stream-unload} — потоковая выгрузка (удаление) после полной загрузки
+%     \item \texttt{full-dump} — полный обход дерева
+%   \end{itemize}
+% \end{itemize}
+% \end{frame}
+
+% \begin{frame}{Методика измерений}
+% \begin{itemize}
+%   \item Параметры прогона: \texttt{-n 200000}, \texttt{ITERATIONS=30}, \texttt{WARMUP=5}
+%   \item Сравнение по метрикам:
+%   \begin{itemize}
+%     \item \textbf{mean/median/p95} времени (мс)
+%     \item \textbf{ops/sec} (операций в секунду)
+%   \end{itemize}
+% \end{itemize}
+
+% \vspace{0.6em}
+% \small
+% \textbf{Смысл для диплома:} выбрать структуру данных, которая лучше подходит под профиль нагрузки BGP (обновления + редкие полные обходы).
+% \end{frame}
+
+% \begin{frame}{Результаты: сводка (mean / p95 / ops/sec)}
+% \small
+% \begin{tabular}{l l r r r}
+% \textbf{Tree} & \textbf{Scenario} & \textbf{mean, ms} & \textbf{p95, ms} & \textbf{ops/sec} \\
+% \hline
+% ART   & full-load     & 176.06 & 183.25 & 1\,137\,449 \\
+% Radix & full-load     & 184.41 & 197.97 & 1\,086\,965 \\
+% ART   & stream-load   & 233.12 & 248.88 &   859\,258 \\
+% Radix & stream-load   & 232.73 & 251.27 &   860\,780 \\
+% ART   & stream-unload & 134.24 & 146.20 & 1\,494\,212 \\
+% Radix & stream-unload & 136.75 & 148.78 & 1\,465\,936 \\
+% ART   & full-dump     &  71.86 &  79.31 & 2\,797\,225 \\
+% Radix & full-dump     &  26.90 &  29.66 & 7\,460\,913 \\
+% \end{tabular}
+% \end{frame}
+
+% \begin{frame}{Выводы для архитектуры микросервиса}
+% \begin{itemize}
+%   \item \textbf{Загрузка и обновления:} ART и Radix сопоставимы; ART чуть быстрее в \texttt{full-load} и \texttt{stream-unload}
+%   \item \textbf{Полный обход (dump):} Radix заметно быстрее в \texttt{full-dump} на данной выборке
+% \end{itemize}
+
+% \vspace{0.7em}
+% Выбор структуры зависит от профиля нагрузки:
+% \begin{itemize}
+%   \item если приоритет — \textbf{потоковые обновления} и \textbf{редкие полные обходы}, ART выглядит разумным вариантом
+%   \item если важны \textbf{частые полные дампы/сканы}, Radix даёт сильный выигрыш
+% \end{itemize}
+% \end{frame}
+
+
+
+\begin{frame}{Формулировка проблемы}
+\begin{block}{}
+\large
+Отсутствует механизм \textbf{непрерывной актуализации} AS-базы в реальном времени на основе обновления маршрутной информации,
+пригодный для \textbf{высоконагруженных систем}.
+\end{block}
+
+\vspace{0.7em}
+\alert{\faExclamationTriangle\quad Нужен выделенный сервис, обновляющий таблицу \texttt{prefix → ASN} по мере обновления маршрутной информации.}
+\end{frame}
+
+% ==================== Section: Goals ====================
+\section{Цель, задачи и план}
+
+\begin{frame}{Цель и задачи}
+\textbf{Цель:} разработать микросервис, поддерживающий AS-базу на основе BGP-данных в режиме реального времени.
+
+\vspace{0.8em}
+\textbf{Задачи:}
+\begin{itemize}
+  \item Спроектировать архитектуру микросервиса и контуры интеграции
+  \item Реализовать взаимодействие с GoBGP (FullView + Update Stream)
+  \item Реализовать gRPC API для потребителей (Collector / Mitigator)
+  \item Подготовить методику и план экспериментов (latency, нагрузка, точность)
+\end{itemize}
+\end{frame}
+
+% ==================== Section: Architecture ====================
+\section{Архитектура решения}
+
+\begin{frame}{Предлагаемая архитектура}
+\begin{columns}[T,onlytextwidth]
+\column{0.4\textwidth}
+\begin{itemize}
+  \item Выделенный BGP-микросервис
+  \item Потоковые обновления без полной блокировки
+  \item Параллельная обработка и масштабируемость
+\end{itemize}
+
+
+\column{0.6\textwidth}
+\centering
+\includegraphics[
+  width=\linewidth,
+  height=0.9\textheight,
+  keepaspectratio
+]{sota_big.png}
+\end{columns}
+
+\end{frame}
+
+
+\begin{frame}{Сценарий: выгрузка полной базы (DumpAll)}
+\centering
+\includegraphics[width=0.6\linewidth]{dump_parallel.png}
+\captionof*{figure}{Параллельная выгрузка (DumpAll) данных из шардов с использованием локальных (shard-level) блокировок.}
+\end{frame}
+
+% ==================== Section: Current status ====================
+\section{Текущий прогресс}
+
+\begin{frame}{Что уже реализовано}
+\begin{itemize}
+  \item Выделена BGP-логика из Collector в отдельный микросервис
+  \item Реализован клиент взаимодействия с GoBGP 
+  \item Реализовано gRPC API для:
+  \begin{itemize}
+    \item общения Collector ↔ микросервис
+    \item общения Mitigator ↔ микросервис
+  \end{itemize}
+\end{itemize}
+
+\vspace{0.7em}
+\alert{\faCheckCircle\quad Завершён первый этап: вся логика работы с BGP выделена из Collector в самостоятельный работоспособный микросервис с протестированным gRPC API}
+\end{frame}
+
+\begin{frame}{План работ на следующий семестр}
+\begin{enumerate}
+  \item Доработка и оптимизация хранилища \texttt{prefix → ASN}
+  \item Внедрение и оптимизация алгоритма поиска ASN по IP-адресу (Longest Prefix Match)
+  \item Потоковое применение BGP-обновлений (низкая задержка)
+  \item Нагрузочное тестирование и бенчмарки
+  \item Сравнение с подходом периодической FullView-обработки
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{Ожидаемые результаты}
+\begin{itemize}
+  \item Снижение задержки между BGP-изменением и фиксацией в AS-базе
+  \item Улучшение качества решений Mitigator/Collector за счёт актуальности данных
+  \item Масштабируемая архитектура, готовая к эксплуатации
+\end{itemize}
+
+\vspace{0.7em}
+\alert{\faRocket\quad Практическая ценность: более точная и быстрая реакция на изменения в сети.}
+\end{frame}

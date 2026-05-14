@@ -1,0 +1,21 @@
+\begin{frame}[shrink=8]\frametitle{Результаты сравнительных измерений}
+{\footnotesize\textit{100\,000 записей · ART: 16~шардов, без сортировки при выгрузке · Ryzen~AI~9~HX~370, 24~потока, 32~ГБ LPDDR5X}}
+
+\vspace{0.3em}
+\setlength{\tabcolsep}{6pt}\footnotesize
+\begin{tabular}{p{0.36\linewidth}|c|c}
+\hline
+\rowcolor{gray!20}
+\textbf{Операция} & \textbf{ranger} & \textbf{шард. ART} \\
+\hline\hline
+Полная выгрузка IPv4 & 0.24--0.28~мс & 11--12~мс \\\hline
+Полная выгрузка IPv6 & 0.20--0.25~мс & 11--12~мс \\\hline
+Одиночная запись     & 590--620~мс  & ${\approx}1{,}7{\cdot}10^{-4}$~мс \\\hline
+Поиск IPv4 /32       & 151~нс       & 400--500~нс \\\hline
+Поиск IPv6 /128      & 168--178~нс  & 3700--4000~нс \\\hline
+\end{tabular}
+
+\vspace{0.3em}
+\footnotesize
+\textbf{Вывод:} одиночная запись у шардированного ART быстрее на \textbf{6 порядков} (${\approx}1{,}7{\cdot}10^{-4}$~мс vs 600~мс); полная выгрузка медленнее (11~мс vs 0,25~мс), однако приемлема для целевых сценариев.
+\end{frame}
