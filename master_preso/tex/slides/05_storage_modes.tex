@@ -3,19 +3,19 @@
 \begin{tabular}{p{0.30\linewidth}|p{0.30\linewidth}|p{0.30\linewidth}}
 \hline
 \rowcolor{gray!20}
-\textbf{Критерий} & \textbf{ranger (старое)} & \textbf{шард. ART (новое)} \\
+\textbf{Критерий} & \textbf{ranger} & \textbf{шард. ART} \\
 \hline\hline
 Режим обновления
-  & Polling по таймеру; полная замена таблицы
+  & Полная замена и точечные \texttt{Insert}/\texttt{Remove}
   & Полный снимок, затем поток обновлений \\\hline
 Полная выгрузка
-  & \textbf{Быстро} --- копирование слайса
-  & \textbf{Медленнее} --- обход шардов, аллокации \\\hline
+  & \textbf{Быстрее} --- линейное представление
+  & \textbf{Дороже} --- обход шардов и flatten \\\hline
 Одиночная запись
-  & \textbf{Перестройка всей таблицы}, $O(n)$
-  & \textbf{Локально в шарде}, без перестройки \\\hline
+  & \textbf{Точечный update}, микросекунды
+  & \textbf{Локально в шарде}, сотни наносекунд \\\hline
 Поток обновлений
-  & \textbf{Не поддерживается}
+  & \textbf{Поддерживается}
   & \textbf{Поддерживается} \\\hline
 \end{tabular}
 

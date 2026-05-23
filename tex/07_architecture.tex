@@ -121,9 +121,9 @@
 (см. рис.~\ref{fig:store-contract}):
 
 \begin{itemize}
-\item \textbf{\texttt{ranger}} -- прежнее решение, оптимизированное под полную
-замену таблицы;
-\item \textbf{шардированный ART} -- новое решение, поддерживающее
+\item \textbf{\texttt{ranger}} -- решение на базе \texttt{cidranger} с
+операциями полной замены, точечной вставки и удаления;
+\item \textbf{шардированный ART} -- backend, поддерживающий
 инкрементальные модификации.
 \end{itemize}
 
@@ -141,7 +141,7 @@
     \texttt{Lookup} $|$ \texttt{Dump}};
 \node[block, text width=4.6cm, below left=1cm and 0.4cm of iface.south, fill=gray!4] (rg)
    {\textbf{Реализация \texttt{ranger}}\\
-    плоский слайс\\ полная замена при \texttt{Upsert}};
+    \texttt{cidranger}\\ \texttt{Insert}/\texttt{Remove}};
 \node[block, text width=4.6cm, below right=1cm and 0.4cm of iface.south, fill=gray!4] (art)
    {\textbf{Реализация \textit{шард. ART}}\\
     шарды + ART-деревья\\ локальные \texttt{Upsert}/\texttt{Delete}};
