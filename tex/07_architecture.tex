@@ -121,8 +121,9 @@
 (см. рис.~\ref{fig:store-contract}):
 
 \begin{itemize}
-\item \textbf{\texttt{ranger}} -- решение на базе \texttt{cidranger} с
-операциями полной замены, точечной вставки и удаления;
+\item \textbf{\texttt{ranger}} -- решение на базе \texttt{cidranger}; в
+эксплуатационном режиме сервиса используется polling по таймеру и полная
+замена снимка, а backend API допускает также точечную вставку и удаление;
 \item \textbf{шардированный ART} -- backend, поддерживающий
 инкрементальные модификации.
 \end{itemize}

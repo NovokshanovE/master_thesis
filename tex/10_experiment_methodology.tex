@@ -23,7 +23,9 @@ in-memory базы после выделения микросервиса. Дл�
 
 \begin{itemize}
 \item \textbf{\texttt{ranger}} -- вариант хранилища на базе
-библиотеки \texttt{cidranger};
+библиотеки \texttt{cidranger}; для эксплуатационного режима он
+соответствует polling-обновлению через полный снимок, а в микробенчмарках
+также измеряется точечный backend-путь;
 \item \textbf{шард. ART} -- вариант хранилища на базе шардированного
 Adaptive Radix Tree.
 \end{itemize}
