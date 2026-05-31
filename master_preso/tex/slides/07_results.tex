@@ -1,31 +1,95 @@
-\begin{frame}[shrink=12]\frametitle{Результаты сравнительных измерений}
-{\footnotesize\textit{ART: 16~шардов, без сортировки при выгрузке · Ryzen~AI~9~HX~370, 24~потока, 32~ГБ LPDDR5X}}
+\begin{frame}\frametitle{Шардирование ART: относительное время}
+{\footnotesize\textit{Среднее для 100k и 3M mixed; для 100k IPv4 и IPv6 усреднены}}
+
+\vspace{0.1em}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.90\linewidth,
+  height=0.52\textheight,
+  ybar,
+  bar width=5pt,
+  ymin=80,
+  ymax=220,
+  ylabel={Время относительно 1 шарда, \%},
+  xlabel={Число шардов},
+  symbolic x coords={1,8,16,32,64},
+  xtick=data,
+  ymajorgrids=true,
+  grid style={gray!25},
+  tick label style={font=\scriptsize},
+  label style={font=\scriptsize},
+  legend style={
+    font=\scriptsize,
+    at={(0.5,-0.22)},
+    anchor=north,
+    legend columns=4
+  },
+  enlarge x limits=0.16,
+  line width=0.4pt
+]
+
+\addplot+[fill=blue!45, draw=blue!70!black]
+coordinates {(1,100.0) (8,98.6) (16,99.8) (32,98.8) (64,99.2)};
+\addlegendentry{Lookup}
+
+\addplot+[fill=red!45, draw=red!70!black]
+coordinates {(1,100.0) (8,111.9) (16,108.6) (32,108.8) (64,104.8)};
+\addlegendentry{Replace}
+
+\addplot+[fill=brown!45, draw=brown!70!black]
+coordinates {(1,100.0) (8,113.7) (16,118.4) (32,124.6) (64,116.2)};
+\addlegendentry{Upsert}
+
+\addplot+[fill=black!35, draw=black]
+coordinates {(1,100.0) (8,156.1) (16,173.8) (32,195.6) (64,210.3)};
+\addlegendentry{Dump}
+
+\addplot+[black, dashed, sharp plot, forget plot]
+coordinates {(1,100) (64,100)};
+
+\end{axis}
+\end{tikzpicture}
+
+\vspace{0.8em}
+{\footnotesize\textbf{Вывод:} относительно одного шарда \texttt{Lookup} почти не меняется,
+\texttt{Replace} и \texttt{Upsert} умеренно ухудшаются, а \texttt{Dump} становится
+до двух раз медленнее при росте числа шардов.}
+\end{frame}
+
+\begin{frame}\frametitle{Результаты: ART против ranger}
+{\textit{ART: 1~шард, без сортировки при выгрузке · Ryzen~AI~9~HX~370, 24~потока, 32~ГБ LPDDR5X}}
 
 \vspace{0.3em}
-\setlength{\tabcolsep}{3pt}\tiny
+\setlength{\tabcolsep}{2pt}\scriptsize
 \resizebox{\linewidth}{!}{%
-\begin{tabular}{p{0.75cm}|p{3.2cm}|p{2.2cm}|p{2.2cm}}
+\begin{tabular}{r|l|l|r|r|r}
 \hline
 \rowcolor{gray!20}
-\textbf{Набор} & \textbf{Операция} & \textbf{ranger} & \textbf{шард. ART} \\
+\textbf{Размер} & \textbf{Тип} & \textbf{Операция} & \textbf{ranger} &
+\textbf{ART} & \textbf{Ускорение ART} \\
 \hline\hline
-$10^5$ & Полная выгрузка IPv4 & 48{,}90~мс & 142{,}80~мс \\\hline
-$10^5$ & Полная выгрузка IPv6 & 101{,}36~мс & 201{,}93~мс \\\hline
-$10^5$ & Одиночная запись IPv4 & 3{,}94~мкс  & 173{,}1~нс \\\hline
-$10^5$ & Поиск IPv4           & 150--180~нс & ${\approx}150$~нс \\\hline
-$10^5$ & Поиск IPv6           & 175{,}5~нс  & 211{,}7~нс \\\hline
+\texttt{$10^5$} & IPv4 & \texttt{Dump} & 44{,}98~мс & 55{,}94~мс & 0{,}80$\times$ \\\hline
+\texttt{$10^5$} & IPv4 & \texttt{Replace} & 489{,}2~мс & 19{,}11~мс & 25{,}6$\times$ \\\hline
+\texttt{$10^5$} & IPv4 & \texttt{Lookup} & 146{,}8~нс & 151{,}4~нс & 0{,}97$\times$ \\\hline
+\texttt{$10^5$} & IPv4 & \texttt{Upsert} & 3{,}57~мкс & 132{,}0~нс & 27{,}0$\times$ \\\hline
+\texttt{$10^5$} & IPv6 & \texttt{Dump} & 97{,}31~мс & 92{,}99~мс & 1{,}05$\times$ \\\hline
+\texttt{$10^5$} & IPv6 & \texttt{Replace} & 749{,}8~мс & 23{,}95~мс & 31{,}3$\times$ \\\hline
+\texttt{$10^5$} & IPv6 & \texttt{Lookup} & 165{,}7~нс & 206{,}7~нс & 0{,}80$\times$ \\\hline
+\texttt{$10^5$} & IPv6 & \texttt{Upsert} & 5{,}57~мкс & 166{,}0~нс & 33{,}5$\times$ \\\hline
 \rowcolor{gray!12}
-3M & Полная загрузка таблицы & 30{,}84~с & 693{,}98~мс \\\hline
+\texttt{$3\cdot10^6$} & IPv4+IPv6 & \texttt{Replace} & 26{,}73~с & 586{,}5~мс & 45{,}6$\times$ \\\hline
 \rowcolor{gray!12}
-3M & Полная выгрузка снимка & 4{,}25~с & 6{,}16~с \\\hline
+\texttt{$3\cdot10^6$} & IPv4+IPv6 & \texttt{Lookup} & 181{,}1~нс & 167{,}7~нс & 1{,}08$\times$ \\\hline
 \rowcolor{gray!12}
-3M & Поиск по IP & 187{,}8~нс & 176{,}7~нс \\\hline
+\texttt{$3\cdot10^6$} & IPv4+IPv6 & \texttt{Dump} & 3{,}93~с & 3{,}52~с & 1{,}12$\times$ \\\hline
 \rowcolor{gray!12}
-3M & Одиночная запись & 7{,}99~мкс & 255{,}5~нс \\\hline
+\texttt{$3\cdot10^6$} & IPv4+IPv6 & \texttt{Upsert} & 6{,}97~мкс & 179{,}6~нс & 38{,}8$\times$ \\\hline
 \end{tabular}
 }
 
-\vspace{0.3em}
-\footnotesize
-\textbf{Вывод:} ART выигрывает на полной загрузке и одиночной записи; поиск сопоставим с \texttt{ranger}. Полная выгрузка с flatten остаётся самой дорогой операцией и требует кэша или потоковой выдачи.
+\vspace{0.45em}
+\textbf{Вывод:} ART быстрее на \texttt{Upsert} и полном \texttt{Replace},
+lookup сопоставим с \texttt{ranger}. Для \texttt{Dump} результат зависит от
+набора данных.
 \end{frame}

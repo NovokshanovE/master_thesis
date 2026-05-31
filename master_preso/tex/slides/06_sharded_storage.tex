@@ -1,6 +1,8 @@
-\begin{frame}[fragile,shrink=12]\frametitle{Шардированное хранилище: устройство}
+\begin{frame}[fragile]\frametitle{Шардированное хранилище: устройство}
 \centering
 \begin{tikzpicture}[
+  scale=0.88,
+  transform shape,
   box/.style={draw=black,rounded corners=3pt,align=center,font=\footnotesize,
               text width=1.6cm,minimum height=0.8cm,fill=gray!12},
   garr/.style={-{Latex[length=1.8mm]},thick},
@@ -33,14 +35,11 @@
 \draw[garr] (lok) -- (ark);
 \end{tikzpicture}
 
-\vspace{0.25em}
-\raggedright\scriptsize
-\begin{itemize}\setlength{\itemsep}{0.15em}
-  \item Запись хранится по ключу ``адрес сети + длина префикса''; по этому
-  ключу вычисляется FNV-хеш и выбирается один шард.
-  \item Внутри шарда префиксы лежат в локальном ART; потоковое изменение
-  выполняет \texttt{Upsert}/\texttt{Delete} только в выбранном шарде.
-  \item Поиск по IP: перебираются возможные длины маски, строится
-  кандидат-префикс и выполняется точный поиск в соответствующем ART.
+\vspace{0.05em}
+\raggedright
+\begin{itemize}\setlength{\itemsep}{0.05em}
+  \item Ключ записи: адрес сети + длина префикса; FNV-хеш выбирает шард.
+  \item Потоковые \texttt{Upsert}/\texttt{Delete} меняют только выбранный шард.
+  \item \texttt{Lookup} проверяет активные длины префиксов и ищет кандидат в ART.
 \end{itemize}
 \end{frame}

@@ -1,0 +1,20 @@
+\begin{frame}\frametitle{Проблематика}
+\begin{itemize}\setlength{\itemsep}{0.2em}
+  \item GoBGP отдаёт полный снимок через \texttt{ListPath} и поток
+  update/withdraw через \texttt{WatchEvent}.
+  \item BGP-состояние меняется по мере изменения маршрутов; события могут
+  приходить всплесками.
+  \item В режиме \texttt{ranger} сервис обновляет таблицу polling-ом:
+  каждый тик заново читает полный RIB и заменяет состояние целиком.
+  \item Частый polling дорог: стоимость зависит от всей таблицы
+  ($>$1M IPv4-префиксов и сотни тысяч IPv6), даже если изменился один маршрут.
+\end{itemize}
+
+\vspace{0.2em}
+\begin{block}{Требование к хранилищу}
+\centering
+Актуальность должна поддерживаться применением отдельных
+\texttt{Upsert}/\texttt{Delete} из \texttt{WatchEvent}, а не частой
+полной перестройкой таблицы.
+\end{block}
+\end{frame}
