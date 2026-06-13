@@ -1,21 +1,22 @@
 \begin{frame}\frametitle{Варианты хранилища и режимы обновления}
 \setlength{\tabcolsep}{6pt}\footnotesize
-\begin{tabular}{p{0.30\linewidth}|p{0.30\linewidth}|p{0.30\linewidth}}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.28\linewidth}|>{\raggedright\arraybackslash}p{0.31\linewidth}|>{\raggedright\arraybackslash}p{0.31\linewidth}}
 \hline
 \rowcolor{gray!20}
-\textbf{Критерий} & \textbf{ranger (старое)} & \textbf{шард. ART (новое)} \\
+\textbf{Критерий} & \textbf{ranger} & \textbf{шард. ART} \\
 \hline\hline
 Режим обновления
-  & Polling по таймеру; полная замена таблицы
-  & Полный снимок, затем поток обновлений \\\hline
+  & Polling по таймеру,\newline полный снимок
+  & Полный снимок, затем\newline поток обновлений \\\hline
 Полная выгрузка
-  & \textbf{Быстро} --- копирование слайса
-  & \textbf{Медленнее} --- обход шардов, аллокации \\\hline
+  & \textbf{Быстрее} --- линейное\newline представление
+  & \textbf{Дороже} --- обход шардов\newline и flatten \\\hline
 Одиночная запись
-  & \textbf{Перестройка всей таблицы}, $O(n)$
-  & \textbf{Локально в шарде}, без перестройки \\\hline
+  & \textbf{Точечный update},\newline микросекунды
+  & \textbf{Локально в шарде},\newline сотни наносекунд \\\hline
 Поток обновлений
-  & \textbf{Не поддерживается}
+  & \textbf{Не является рабочим}\newline \textbf{режимом}
   & \textbf{Поддерживается} \\\hline
 \end{tabular}
 

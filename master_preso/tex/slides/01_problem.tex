@@ -1,7 +1,11 @@
 \begin{frame}\frametitle{Контекст и постановка проблемы}
-\begin{itemize}\setlength{\itemsep}{0.5em}
-  \item \textbf{BIFIT MITIGATOR} (защита от DDoS) и \textbf{BIFIT COLLECTOR} (анализ трафика) требуют \textbf{актуальных знаний о принадлежности IP-адресов автономным системам}.
-  \item Источник данных --- \textbf{таблица «IP-префикс → ASN»} из полной таблицы маршрутизации BGP; геолокационные справочники непригодны для систем реального времени.
-  \item \textbf{Проблема:} логика обновления таблицы IP-префикс → ASN встроена только в BIFIT COLLECTOR; хранилище ranger обновляется раз в несколько часов --- \textbf{потоковые обновления не поддерживаются}.
+\begin{itemize}\setlength{\itemsep}{0.45em}
+  \item \textbf{BIFIT MITIGATOR} и \textbf{BIFIT COLLECTOR} должны быстро
+  определять автономную систему по IP-адресу.
+  \item Для этого нужна актуальная таблица
+  \textbf{«IP-префикс → ASN»} из данных BGP.
+  \item \textbf{Проблема:} обновление привязано к BIFIT COLLECTOR, а
+  хранилище ranger обновляется раз в несколько часов и не принимает поток
+  изменений.
 \end{itemize}
 \end{frame}
